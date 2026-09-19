@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #12211d;
+  --ink-soft: #1c332b;
+  --paper: #f7f4ec;
+  --paper-dim: #eee9da;
+  --gold: #e3a63e;
+  --gold-deep: #b9822b;
+  --moss: #5c8b76;
+  --text-on-paper: #16241f;
+  --text-muted: #5b6b63;
+  --text-on-ink: #efeadc;
+  --text-on-ink-muted: #9fb0a6;
+  --border-soft: rgba(22, 36, 31, 0.12);
+  --border-on-ink: rgba(239, 234, 220, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--text-on-paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+@media (max-width: 480px) {
+  .wrap {
+    padding: 0 20px;
+  }
+}
+
+/* Shared button classes used across all pages */
+.btn {
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.btn-gold:hover {
+  background: #ecb654;
+  transform: translateY(-1px);
+}
+
+.btn-gold:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-ghost-on-ink {
+  background: transparent;
+  color: var(--text-on-ink);
+  border: 1px solid var(--border-on-ink);
+}
+
+.btn-ghost-on-ink:hover {
+  border-color: var(--text-on-ink-muted);
+}
+
+.btn-ghost-on-paper {
+  background: transparent;
+  color: var(--text-on-paper);
+  border: 1px solid var(--border-soft);
+}
+
+.btn-ghost-on-paper:hover {
+  border-color: var(--moss);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

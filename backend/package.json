@@ -1,0 +1,35 @@
+{
+  "name": "gradland",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/core": "^1.2.11",
+    "@langchain/google-genai": "^2.3.2",
+    "@langchain/tavily": "^1.2.0",
+    "@tavily/core": "^0.7.11",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.6.0",
+    "mongoose": "^9.9.5",
+    "node-cron": "^4.6.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.2",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}

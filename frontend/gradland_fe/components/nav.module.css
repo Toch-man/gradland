@@ -1,0 +1,82 @@
+.nav {
+  background: var(--ink);
+  border-bottom: 1px solid var(--border-on-ink);
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-on-ink);
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.logoMark {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.navLinks a:not(.btn) {
+  text-decoration: none;
+  color: var(--text-on-ink-muted);
+  font-size: 15px;
+  transition: color 0.15s ease;
+}
+
+.navLinks a:not(.btn):hover,
+.navLinks a:not(.btn):focus-visible {
+  color: var(--text-on-ink);
+}
+
+.authLink {
+  font-size: 15px;
+  color: var(--text-on-ink-muted);
+  text-decoration: none;
+}
+
+.authLink:hover {
+  color: var(--text-on-ink);
+}
+
+@media (max-width: 720px) {
+  .navLinks a:not(.btn) {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .navInner {
+    padding: 16px 20px;
+  }
+  .logo {
+    font-size: 19px;
+  }
+  .navLinks {
+    gap: 10px;
+  }
+  .navLinks :global(.btn) {
+    padding: 9px 14px;
+    font-size: 14px;
+  }
+  .navLinks :global(.btn-ghost-on-ink) {
+    display: none;
+  }
+}
