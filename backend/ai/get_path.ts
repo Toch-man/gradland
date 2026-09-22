@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { TavilySearch } from "@langchain/tavily";
 import { z } from "zod";

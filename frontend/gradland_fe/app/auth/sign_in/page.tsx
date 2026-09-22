@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { use_sign_up } from "@/hooks/use_auth";
 import Nav from "@/components/Nav";
 import styles from "./signin.module.css";
 
@@ -12,7 +13,6 @@ export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -23,6 +23,7 @@ export default function SignupPage() {
     course_of_study: "",
     current_grade: "",
   });
+  const sign_up = use_sign_up();
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -34,30 +35,18 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/signup`,
+      sign_up.mutate(
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            ...form,
-            age: Number(form.age),
-            current_grade: form.current_grade
-              ? Number(form.current_grade)
-              : undefined,
-          }),
+          ...form,
+          age: Number(form.age),
+          current_grade: form.current_grade
+            ? Number(form.current_grade)
+            : undefined,
+        },
+        {
+          onSuccess: () => router.push("/onboarding/goals"),
         },
       );
-
-      const data = await res.json();
-
-      if (!data.success) {
-        setError(data.message || "Something went wrong. Try again.");
-        return;
-      }
-
-      router.push("/onboarding/goals");
     } catch {
       setError("Couldn't reach the server. Check your connection.");
     } finally {

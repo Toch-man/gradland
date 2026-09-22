@@ -1,0 +1,114 @@
+.main {
+  min-height: calc(100vh - 73px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  background: var(--paper-dim);
+}
+
+.card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 40px 36px;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 32px 22px;
+  }
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+
+.subtitle {
+  font-size: 14.5px;
+  color: var(--text-muted);
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.option:hover {
+  border-color: var(--moss);
+}
+
+.optionSelected {
+  border-color: var(--moss);
+  background: rgba(92, 139, 118, 0.06);
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--moss);
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+}
+
+.optionSelected .checkbox {
+  background: var(--moss);
+}
+
+.checkbox svg {
+  width: 10px;
+  height: 10px;
+}
+
+.optionLabel {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-on-paper);
+  margin-bottom: 2px;
+}
+
+.optionDescription {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.error {
+  font-size: 14px;
+  color: #b3402f;
+  background: rgba(179, 64, 47, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}

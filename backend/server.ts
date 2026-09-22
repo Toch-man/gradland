@@ -5,8 +5,8 @@ import { startOpportunityCron } from "./jobs/refresh_opportunites";
 dotenv.config();
 
 connectDB();
-
-app.listen(5000, () => {
+const PORT = process.env.PORT;
+app.listen(PORT, () => {
   console.log("Server running on port 5000");
 });
 startOpportunityCron();

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Sans } from "next/font/google";
+import { Providers } from "@/app/provider";
 import "./globals.css";
 
 // Display serif — used for headlines only
@@ -33,7 +34,7 @@ export default function RootLayout({
         className={`${fraunces.variable} ${plexSans.variable}`}
         style={{ fontFamily: "var(--font-body)" }}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { use_log_in } from "@/hooks/use_auth";
 import Nav from "@/components/Nav";
 import styles from "./login.module.css";
 
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const log_in = use_log_in();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -19,21 +21,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // needed since your backend sets httpOnly cookies
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!data.success) {
-        setError(data.message || "Something went wrong. Try again.");
-        return;
-      }
-
-      router.push("/dashboard");
+      log_in.mutate(
+        {
+          email: email,
+          password: password,
+        },
+        { onSuccess: () => router.push("/dashboard") },
+      );
     } catch {
       setError("Couldn't reach the server. Check your connection.");
     } finally {

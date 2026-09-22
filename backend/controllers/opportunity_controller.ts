@@ -3,7 +3,7 @@ import { fetch_opportunities } from "../ai/get_path";
 import User from "../models/user_model";
 import { jwtPayload } from "../middleware/auth_middleware";
 
-export const recommend_path = async (req: Request, res: Response) => {
+export const recommend_opportunity = async (req: Request, res: Response) => {
   const email = req.user!.email;
   try {
     const user = await User.findOne({ email });

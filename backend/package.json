@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch server.ts",
+    "start": "tsx  server.ts",
+    "test": "vitest"
   },
   "author": "",
   "license": "ISC",
@@ -18,7 +20,9 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "express-validator": "^7.3.2",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.6.0",
     "mongoose": "^9.9.5",
@@ -29,7 +33,9 @@
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.2",
     "@types/node-cron": "^3.0.11",
+    "supertest": "^7.2.2",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
   }
 }

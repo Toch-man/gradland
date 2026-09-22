@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Nav from "@/components/Nav";
 import MilestoneModal from "@/components/MilestoneModal";
 import styles from "./dashboard.module.css";
-
+import { use_current_user } from "@/hooks/use_auth";
 type Gap = {
   criterion: string;
   is_fixable: boolean;

@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 import { validationResult } from "express-validator";
 import User from "../models/user_model";
 import jwt from "jsonwebtoken";
+import { redis } from "../lib/redis";
+import hash_token from "../lib/hash_token";
+
+const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export const signup = async (req: Request, res: Response) => {
   const error = validationResult(req);
@@ -52,8 +56,13 @@ export const signup = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    new_user.token = refresh_token;
-    new_user.token_expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await redis.set(
+      `refresh_token:${new_user._id}`,
+      hash_token(refresh_token),
+      "EX",
+      REFRESH_TTL_SECONDS,
+    );
+
     await new_user.save();
 
     return res.status(201).json({
@@ -123,9 +132,16 @@ export const login = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    await redis.set(
+      `refresh_token:${user._id}`,
+      hash_token(refresh_token),
+      "EX",
+      REFRESH_TTL_SECONDS,
+    );
     return res.status(200).json({
       success: true,
       message: "login successful",
+      data: user,
     });
   } catch (error: any) {
     console.error(error);
@@ -142,10 +158,7 @@ export const log_out = async (req: Request, res: Response) => {
     const refresh_token = req.cookies.refresh_token;
 
     if (refresh_token) {
-      await User.findOneAndDelete({
-        token: refresh_token,
-        email: req.user!.email,
-      });
+      await redis.del(`refresh_token:${req.user!.user_id}`);
     }
 
     res.clearCookie("access_token", {
@@ -175,7 +188,7 @@ export const refresh_token = async (req: Request, res: Response) => {
     if (!refresh_token) {
       return res.status(401).json({
         success: false,
-        message: "no token found",
+        message: "no token found please login",
       });
     }
     let decoded: any;
@@ -183,7 +196,6 @@ export const refresh_token = async (req: Request, res: Response) => {
       decoded = jwt.verify(refresh_token, process.env.REFRESH_SECRET!);
     } catch (error: any) {
       if (error instanceof jwt.TokenExpiredError) {
-        await User.deleteOne({ token: refresh_token });
         return res.status(401).json({
           success: false,
           message: "token expired please login",
@@ -195,11 +207,11 @@ export const refresh_token = async (req: Request, res: Response) => {
       }
     }
 
-    const saved_token = await User.findOne({ token: refresh_token });
-    if (!saved_token) {
+    const saved_token = await redis.get(`refresh_token:${decoded.user_id}`);
+    if (!saved_token || saved_token !== hash_token(refresh_token)) {
       return res.status(401).json({
         success: false,
-        message: "refresh token already used  please login",
+        message: "refresh token invalid  please login",
       });
     }
     const user = await User.findOne({ email: decoded.email });
@@ -236,6 +248,13 @@ export const refresh_token = async (req: Request, res: Response) => {
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    await redis.set(
+      `refresh_token:${user._id}`,
+      hash_token(new_refresh_token),
+      "EX",
+      REFRESH_TTL_SECONDS,
+    );
+    return res.status(200).json({ success: true, message: "token refreshed" });
   } catch (error: any) {
     console.error(error);
     return res.status(500).json({ success: false, message: "server error" });
