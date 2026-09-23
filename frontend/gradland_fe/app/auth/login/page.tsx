@@ -11,28 +11,19 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
   const log_in = use_log_in();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
 
-    try {
-      log_in.mutate(
-        {
-          email: email,
-          password: password,
-        },
-        { onSuccess: () => router.push("/dashboard") },
-      );
-    } catch {
-      setError("Couldn't reach the server. Check your connection.");
-    } finally {
-      setLoading(false);
-    }
+    log_in.mutate(
+      {
+        email: email,
+        password: password,
+      },
+      { onSuccess: () => router.push("/dashboard") },
+    );
   }
 
   return (
@@ -77,15 +68,17 @@ export default function LoginPage() {
               />
             </label>
 
-            {error && <p className={styles.error}>{error}</p>}
+            {log_in.isError && (
+              <p className={styles.error}>{log_in.error.message}</p>
+            )}
 
             <button
               type="submit"
               className="btn btn-gold"
-              disabled={loading}
+              disabled={log_in.isPending}
               style={{ width: "100%", fontSize: 16, padding: "13px 0" }}
             >
-              {loading ? "Logging in…" : "Log in"}
+              {log_in.isPending ? "Logging in…" : "Log in"}
             </button>
           </form>
 

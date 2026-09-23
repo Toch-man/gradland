@@ -1,172 +1,87 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import MilestoneModal from "@/components/MilestoneModal";
 import styles from "./dashboard.module.css";
-import { use_current_user } from "@/hooks/use_auth";
-type Gap = {
-  criterion: string;
-  is_fixable: boolean;
-  how_to_close: string | null;
-};
-
-type Match = {
-  opportunity_id: string | null;
-  title: string;
-  source: "DATABASE" | "LIVE_SEARCH";
-  eligibility_status: "ELIGIBLE" | "WORKABLE" | "NOT_ELIGIBLE";
-  fit_score: number;
-  reasoning: string;
-  gaps: Gap[];
-  application_url: string | null;
-  deadline: string | null;
-};
-
-type Milestone = {
-  _id: string;
-  title: string;
-  category: string;
-  description: string;
-  is_completed: boolean;
-};
-
-type TrackedPath = {
-  _id: string;
-  opportunity: { _id: string; title: string; application_url?: string };
-  milestones: Milestone[];
-  eligibility_score: number;
-  status: "IN_PROGRESS" | "ELIGIBLE" | "APPLIED";
-};
-
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { use_current_user, use_log_out } from "@/hooks/use_auth";
+import {
+  use_recommendations,
+  use_paths,
+  use_create_path,
+  use_toggle_milestone,
+  Match,
+  Milestone,
+} from "@/hooks/use_opportunity";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<"paths" | "matches">("paths");
-  const [paths, setPaths] = useState<TrackedPath[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeMilestone, setActiveMilestone] = useState<{
     pathId: string;
     milestone: Milestone;
   } | null>(null);
 
-  useEffect(() => {
-    loadPaths();
-    loadMatches();
-  }, []);
+  const { data: user, isPending: userLoading } = use_current_user();
+  const logOut = use_log_out();
 
-  async function loadPaths() {
-    try {
-      const res = await fetch(`${API}/paths`, { credentials: "include" });
-      const data = await res.json();
-      if (data.success) setPaths(data.data);
-    } catch {
-      setError("Couldn't load your tracked paths.");
-    }
+  const {
+    data: matches,
+    isPending: matchesLoading,
+    error: matchesError,
+  } = use_recommendations();
+
+  const { data: paths, isPending: pathsLoading } = use_paths();
+
+  const createPath = use_create_path();
+  const toggleMilestone = use_toggle_milestone();
+
+  function prepareForOpportunity(match: Match) {
+    if (!match.opportunity_id) return;
+    createPath.mutate(
+      {
+        opportunity_id: match.opportunity_id,
+        title: match.title,
+        description: match.reasoning,
+        gaps: match.gaps,
+      },
+      { onSuccess: () => setTab("paths") },
+    );
   }
 
-  async function loadMatches() {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/opportunities/recommend`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMatches(data.data);
-      } else if (data.requires_goals) {
-        setError("Set your goals to see recommendations.");
-      }
-    } catch {
-      setError("Couldn't load your matches.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function prepareForOpportunity(match: Match) {
-    try {
-      const res = await fetch(`${API}/paths`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          opportunity_id: match.opportunity_id,
-          title: match.title,
-          description: match.reasoning,
-          gaps: match.gaps,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPaths((prev) => [data.data, ...prev]);
-        setTab("paths");
-      }
-    } catch {
-      setError("Couldn't start tracking this opportunity.");
-    }
-  }
-
-  async function submitMilestone(details: Record<string, any>) {
+  function submitMilestone(details: Record<string, any>) {
     if (!activeMilestone) return;
-    const { pathId, milestone } = activeMilestone;
-
-    try {
-      const res = await fetch(
-        `${API}/paths/${pathId}/milestones/${milestone._id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ details }),
-        },
-      );
-      const data = await res.json();
-      if (data.success) {
-        setPaths((prev) => prev.map((p) => (p._id === pathId ? data.data : p)));
-      }
-    } catch {
-      setError("Couldn't update that milestone.");
-    } finally {
-      setActiveMilestone(null);
-    }
+    toggleMilestone.mutate(
+      {
+        pathId: activeMilestone.pathId,
+        milestoneId: activeMilestone.milestone._id,
+        details,
+      },
+      { onSuccess: () => setActiveMilestone(null) },
+    );
   }
 
-  async function uncheckMilestone(pathId: string, milestone: Milestone) {
-    // Unchecking needs no details modal — just toggle it back
-    try {
-      const res = await fetch(
-        `${API}/paths/${pathId}/milestones/${milestone._id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({}),
-        },
-      );
-      const data = await res.json();
-      if (data.success) {
-        setPaths((prev) => prev.map((p) => (p._id === pathId ? data.data : p)));
-      }
-    } catch {
-      setError("Couldn't update that milestone.");
-    }
+  function uncheckMilestone(pathId: string, milestone: Milestone) {
+    toggleMilestone.mutate({ pathId, milestoneId: milestone._id });
   }
 
   return (
     <>
-      <Nav minimal authAction={{ label: "Log out", href: "/login" }} />
+      <Nav minimal authAction={{ label: "Log out", href: "#" }} />
 
       <main className={styles.main}>
         <div className="wrap">
+          {!userLoading && user && (
+            <p className={styles.welcome}>Welcome, {user.full_name}</p>
+          )}
+
           <div className={styles.tabs}>
             <button
               className={tab === "paths" ? styles.tabActive : styles.tab}
               onClick={() => setTab("paths")}
             >
-              Your paths ({paths.length})
+              Your paths ({paths?.length ?? 0})
             </button>
             <button
               className={tab === "matches" ? styles.tabActive : styles.tab}
@@ -174,13 +89,25 @@ export default function DashboardPage() {
             >
               Recommended for you
             </button>
+            <button
+              className={styles.tab}
+              onClick={() =>
+                logOut.mutate(undefined, {
+                  onSuccess: () => router.push("/login"),
+                })
+              }
+            >
+              Log out
+            </button>
           </div>
-
-          {error && <p className={styles.error}>{error}</p>}
 
           {tab === "paths" && (
             <div className={styles.grid}>
-              {paths.length === 0 && !loading && (
+              {pathsLoading && (
+                <p className={styles.empty}>Loading your paths…</p>
+              )}
+
+              {!pathsLoading && paths?.length === 0 && (
                 <p className={styles.empty}>
                   You&apos;re not tracking anything yet. Check the
                   &quot;Recommended for you&quot; tab and click &quot;Prepare
@@ -188,7 +115,7 @@ export default function DashboardPage() {
                 </p>
               )}
 
-              {paths.map((path) => (
+              {paths?.map((path) => (
                 <div key={path._id} className={styles.card}>
                   <div className={styles.cardHead}>
                     <h3>{path.opportunity.title}</h3>
@@ -257,15 +184,25 @@ export default function DashboardPage() {
 
           {tab === "matches" && (
             <div className={styles.grid}>
-              {loading && <p className={styles.empty}>Finding your matches…</p>}
+              {matchesLoading && (
+                <p className={styles.empty}>Finding your matches…</p>
+              )}
 
-              {!loading && matches.length === 0 && !error && (
+              {matchesError && (
+                <p className={styles.error}>
+                  {matchesError instanceof Error
+                    ? matchesError.message
+                    : "Couldn't load your matches."}
+                </p>
+              )}
+
+              {!matchesLoading && matches?.length === 0 && (
                 <p className={styles.empty}>
                   No matches yet — try broadening your goals or check back soon.
                 </p>
               )}
 
-              {matches.map((match, i) => (
+              {matches?.map((match, i) => (
                 <div key={i} className={styles.card}>
                   <div className={styles.cardHead}>
                     <h3>{match.title}</h3>
@@ -306,6 +243,7 @@ export default function DashboardPage() {
                       className="btn btn-gold"
                       style={{ marginTop: 12 }}
                       onClick={() => prepareForOpportunity(match)}
+                      disabled={createPath.isPending}
                     >
                       {match.eligibility_status === "ELIGIBLE"
                         ? "Track this"

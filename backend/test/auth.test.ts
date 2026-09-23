@@ -1,135 +1,75 @@
 import request from "supertest";
 import app from "../app";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-// Mock modules that hit external services or the DB
-vi.mock("../models/user_model", () => {
-  // Mock constructor and static findOne
-  const MockUser: any = function (data: any) {
-    this._id = "mockid";
-    this.email = data.email;
-    this.save = vi.fn().mockResolvedValue({ _id: "mockid", email: data.email });
-  };
-  MockUser.findOne = vi.fn();
-  return { default: MockUser };
-});
-
-vi.mock("../lib/redis", () => ({
-  redis: {
-    set: vi.fn().mockResolvedValue("OK"),
-    get: vi.fn().mockResolvedValue(null),
-    del: vi.fn().mockResolvedValue(1),
-  },
-}));
-
-vi.mock("../lib/hash_token", () => ({
-  default: (t: string) => t,
-}));
-
-vi.mock("bcrypt", () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue("hashedpass"),
-    compare: vi.fn().mockResolvedValue(true),
-  },
-}));
-
-vi.mock("jsonwebtoken", () => ({
-  default: {
-    sign: (payload: any) => "signed-token",
-    verify: vi.fn().mockImplementation((token: string) => {
-      // return a decoded payload for refresh_token
-      return { user_id: "mockid", email: "a@b.com" };
-    }),
-    TokenExpiredError: class TokenExpiredError extends Error {},
-  },
-}));
-
+import mongoose from "mongoose";
 import User from "../models/user_model";
-import { redis } from "../lib/redis";
-import bcrypt from "bcrypt";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MongoMemoryServer } from "mongodb-memory-server";
+const test_user = { email: "test@example.com", password: "password123" };
 
-beforeEach(() => {
-  process.env.ACCESS_SECRET = "access_secret";
-  process.env.REFRESH_SECRET = "refresh_secret";
+let mongo_server: MongoMemoryServer;
+beforeAll(async () => {
+  mongo_server = await MongoMemoryServer.create();
+  await mongoose.connect(mongo_server.getUri());
 });
 
-afterEach(() => {
-  vi.clearAllMocks();
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongo_server.stop();
 });
 
-describe("Auth endpoints", () => {
-  it("signs up a new user", async () => {
-    // @ts-ignore
-    User.findOne.mockResolvedValueOnce(null);
+afterEach(async () => {
+  // wipe all collections between individual tests, not just at the very end —
+  // keeps each test isolated from what the previous one created
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
+  }
+});
 
-    const res = await request(app).post("/api/auth/sign_up").send({
-      full_name: "Test User",
-      email: "test@example.com",
-      password: "password123",
-      age: 20,
-      status: "STUDENT",
-    });
+describe("POST /auth/sign_up", () => {
+  test("should register new user  successfully", async () => {
+    const res = await request(app).post("auth/sign_up").send(test_user);
 
-    expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty("success", true);
-    expect(res.body).toHaveProperty("message");
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body).toHaveProperty("data");
+    expect(res.headers["set-cookie"]).toBeDefined();
   });
 
-  it("fails login with invalid credentials", async () => {
-    // @ts-ignore
-    User.findOne.mockResolvedValueOnce(null);
+  test("should existing user sign up", async () => {
+    const res = await request(app).post("auth/sign_up").send(test_user);
 
-    const res = await request(app).post("/api/auth/log_in").send({
-      email: "noone@example.com",
-      password: "bad",
-    });
-
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty("success", false);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.success).toBe(false);
   });
 
-  it("logs in successfully", async () => {
-    // return a user object with password
-    const fakeUser = {
-      _id: "mockid",
-      email: "a@b.com",
-      password: "hashedpass",
-    };
-    // @ts-ignore
-    User.findOne.mockResolvedValueOnce(fakeUser);
-    // @ts-ignore
-    (bcrypt.compare as any).mockResolvedValueOnce(true);
-
-    const res = await request(app).post("/api/auth/log_in").send({
-      email: "a@b.com",
-      password: "password123",
-    });
-
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty("success", true);
-  });
-
-  it("refreshes token when valid refresh token cookie provided", async () => {
-    // mock jwt.verify to return decoded payload (done in mock above)
-    // mock redis.get to return the same token as hash_token (hash_token mocked to identity)
-    (redis.get as any).mockResolvedValueOnce("refresh-token-value");
-    // ensure User.findOne returns a user
-    // @ts-ignore
-    User.findOne.mockResolvedValueOnce({ _id: "mockid", email: "a@b.com" });
-
+  test("should reject user with missing fields", async () => {
     const res = await request(app)
-      .post("/api/auth/refresh_token")
-      .set("Cookie", ["refresh_token=refresh-token-value"])
-      .send();
+      .post("auth/sign_up")
+      .send({ email: "test_user@example.com" });
 
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty("success", true);
-    expect(res.body).toHaveProperty("message", "token refreshed");
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+//login
+
+describe("POST /auth/log_in", () => {
+  test("can user login", async () => {
+    const res = await request(app).post("auth/log_in").send(test_user);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body).toHaveProperty("data");
+    expect(res.headers["set-cookie"]).toBeDefined();
   });
 
-  it("logs out (no refresh cookie)", async () => {
-    const res = await request(app).post("/api/auth/logout").send();
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty("success", true);
+  test("can user login with wrong password", async () => {
+    const res = await request(app)
+      .post("auth/log_in")
+      .send({ ...test_user, password: "hello world" });
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.success).toBe(false);
   });
 });

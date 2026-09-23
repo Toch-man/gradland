@@ -11,8 +11,7 @@ type Status = "STUDENT" | "GRADUATE" | "NIL";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -31,27 +30,19 @@ export default function SignupPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
 
-    try {
-      sign_up.mutate(
-        {
-          ...form,
-          age: Number(form.age),
-          current_grade: form.current_grade
-            ? Number(form.current_grade)
-            : undefined,
-        },
-        {
-          onSuccess: () => router.push("/onboarding/goals"),
-        },
-      );
-    } catch {
-      setError("Couldn't reach the server. Check your connection.");
-    } finally {
-      setLoading(false);
-    }
+    sign_up.mutate(
+      {
+        ...form,
+        age: Number(form.age),
+        current_grade: form.current_grade
+          ? Number(form.current_grade)
+          : undefined,
+      },
+      {
+        onSuccess: () => router.push("/onboarding/goals"),
+      },
+    );
   }
 
   return (
@@ -60,7 +51,7 @@ export default function SignupPage() {
         minimal
         authAction={{
           label: "Already have an account? Sign in",
-          href: "/login",
+          href: "/auth/login",
         }}
       />
 
@@ -165,15 +156,17 @@ export default function SignupPage() {
               </label>
             </div>
 
-            {error && <p className={styles.error}>{error}</p>}
+            {sign_up.isError && (
+              <p className={styles.error}>{sign_up.error.message}</p>
+            )}
 
             <button
               type="submit"
               className="btn btn-gold"
-              disabled={loading}
+              disabled={sign_up.isPending}
               style={{ width: "100%", fontSize: 16, padding: "13px 0" }}
             >
-              {loading ? "Creating account…" : "Create account"}
+              {sign_up.isPending ? "Creating account…" : "Create account"}
             </button>
           </form>
 

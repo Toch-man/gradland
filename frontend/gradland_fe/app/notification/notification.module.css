@@ -1,0 +1,76 @@
+.main {
+  min-height: calc(100vh - 73px);
+  background: var(--paper-dim);
+  padding: 40px 0 60px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.markAllBtn {
+  background: none;
+  border: none;
+  color: var(--gold-deep);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  padding: 60px 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  text-decoration: none;
+  color: var(--text-on-paper);
+  font-size: 14.5px;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item:hover {
+  background: var(--paper-dim);
+}
+
+.itemUnread {
+  background: rgba(227, 166, 62, 0.06);
+  font-weight: 500;
+}
+
+.time {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}

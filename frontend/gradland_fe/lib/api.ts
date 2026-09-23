@@ -20,7 +20,7 @@ const refresh_token = async (): Promise<any> => {
 const api_fetch = async (
   endpoint: string,
   options?: RequestInit,
-): Promise<Response> => {
+): Promise<any> => {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     credentials: "include",

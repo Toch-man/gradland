@@ -5,6 +5,7 @@ import User from "../models/user_model";
 import jwt from "jsonwebtoken";
 import { redis } from "../lib/redis";
 import hash_token from "../lib/hash_token";
+import { jwtPayload } from "../middleware/auth_middleware";
 
 const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
 
@@ -158,7 +159,7 @@ export const log_out = async (req: Request, res: Response) => {
     const refresh_token = req.cookies.refresh_token;
 
     if (refresh_token) {
-      await redis.del(`refresh_token:${req.user!.user_id}`);
+      await redis.del(`refresh_token:${(req.user! as jwtPayload).user_id}`);
     }
 
     res.clearCookie("access_token", {
