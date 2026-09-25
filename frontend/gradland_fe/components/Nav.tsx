@@ -2,18 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import styles from "./Nav.module.css";
+import styles from "./nav.module.css";
 import {
   use_notifications,
   use_mark_as_read,
   use_mark_all_as_read,
 } from "@/hooks/use_notification";
 
-// `minimal` hides the marketing links (how it works / opportunities / why)
-// so auth pages (login, signup) show just the logo and a single action link.
-// `showNotifications` turns on the bell — only pass this for authenticated
-// pages (dashboard, notifications page), never marketing/login/signup, so
-// those pages don't fire an unauthenticated notifications request.
 export default function Nav({
   minimal = false,
   authAction,
