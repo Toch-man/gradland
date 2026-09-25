@@ -1,7 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api_fetch from "@/lib/api";
 
-type Goal = {};
+export type Goal =
+  | "SCHOLARSHIP"
+  | "INTERNSHIP"
+  | "JOB"
+  | "GRADUATE_SCHOOL"
+  | "ADMISSION_ABROAD";
 export const use_update_goals = () => {
   const queryClient = useQueryClient();
   return useMutation({
