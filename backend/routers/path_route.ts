@@ -17,7 +17,7 @@ router.get(
   path_controller.get_paths,
 );
 router.patch(
-  "/toggle_milestone",
+  "/:pathId/milestones/:milestoneId",
 
   authenticate,
   general_limiter,

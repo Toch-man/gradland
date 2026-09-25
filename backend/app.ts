@@ -4,6 +4,7 @@ import auth_router from "./routers/auth_route";
 import path_router from "./routers/path_route";
 import user_router from "./routers/user_route";
 import opportunity_router from "./routers/opportunity_route";
+import notification_router from "./routers/notification_route";
 import cors from "cors";
 const app = express();
 
@@ -28,4 +29,5 @@ app.use("/api/auth", auth_router);
 app.use("/api/path", path_router);
 app.use("/api/user", user_router);
 app.use("/api/opportunity", opportunity_router);
+app.use("/api/notification", notification_router);
 export default app;

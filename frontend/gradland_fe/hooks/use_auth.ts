@@ -20,7 +20,7 @@ type LogInInput = {
 export const use_current_user = () => {
   return useQuery({
     queryKey: ["current_user"],
-    queryFn: () => api_fetch("/profile"),
+    queryFn: () => api_fetch("/api/user/user"),
     retry: false,
   });
 };
@@ -29,7 +29,10 @@ export const use_sign_up = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: SignUpInput) =>
-      api_fetch("/sign_up", { method: "POST", body: JSON.stringify(body) }),
+      api_fetch("/api/auth/sign_up", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     onSuccess: (data) => {
       queryClient.setQueryData(["current_user"], data);
     },
@@ -40,7 +43,10 @@ export const use_log_in = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: LogInInput) =>
-      api_fetch("/log_in", { method: "POST", body: JSON.stringify(body) }),
+      api_fetch("/api/auth/log_in", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     onSuccess: (data) => {
       queryClient.setQueryData(["current_user"], data);
     },
@@ -50,6 +56,6 @@ export const use_log_in = () => {
 export const use_log_out = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api_fetch("/log_out", { method: "POST" }),
+    mutationFn: () => api_fetch("/api/auth/logout", { method: "POST" }),
   });
 };

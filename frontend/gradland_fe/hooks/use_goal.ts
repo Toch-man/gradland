@@ -11,7 +11,7 @@ export const use_update_goals = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (goals: Goal[]) =>
-      api_fetch("/profile/goals", {
+      api_fetch("/api/user/update_goals", {
         method: "PATCH",
         body: JSON.stringify({ goals }),
       }),

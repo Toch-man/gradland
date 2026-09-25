@@ -14,6 +14,8 @@ export type Match = {
   eligibility_status: "ELIGIBLE" | "WORKABLE" | "NOT_ELIGIBLE";
   fit_score: number;
   reasoning: string;
+  program_overview: string;
+  application_strategy: string;
   gaps: Gap[];
   application_url: string | null;
   deadline: string | null;
@@ -38,15 +40,16 @@ export type TrackedPath = {
 export const use_recommendations = () => {
   return useQuery<Match[]>({
     queryKey: ["recommendations"],
-    queryFn: () => api_fetch("/opportunities/recommend"),
-    staleTime: 1000 * 60 * 30, // expensive AI call — don't refetch for 30 min
+    queryFn: () => api_fetch("/api/opportunity/recommend"),
+    staleTime: 1000 * 60 * 60,
+    enabled: false, // never fetch automatically — only via refetch(), on a button click
   });
 };
 
 export const use_paths = () => {
   return useQuery<TrackedPath[]>({
     queryKey: ["paths"],
-    queryFn: () => api_fetch("/paths"),
+    queryFn: () => api_fetch("/api/path/get_paths"),
   });
 };
 
@@ -58,7 +61,11 @@ export const use_create_path = () => {
       title: string;
       description: string;
       gaps: Gap[];
-    }) => api_fetch("/paths", { method: "POST", body: JSON.stringify(body) }),
+    }) =>
+      api_fetch("/api/path/create_path", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paths"] });
     },
@@ -77,7 +84,7 @@ export const use_toggle_milestone = () => {
       milestoneId: string;
       details?: Record<string, any>;
     }) =>
-      api_fetch(`/paths/${pathId}/milestones/${milestoneId}`, {
+      api_fetch(`/api/path/${pathId}/milestones/${milestoneId}`, {
         method: "PATCH",
         body: JSON.stringify({ details }),
       }),
