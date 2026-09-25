@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
-import { fetch_opportunities } from "../ai/get_path";
 import User from "../models/user_model";
+import { fetch_opportunities } from "../ai/get_path";
+import { redis } from "../lib/redis";
 import { jwtPayload } from "../middleware/auth_middleware";
 
+const CACHE_TTL_SECONDS = 26 * 60 * 60; // just over a day — outlives the daily cron gap
+
 export const recommend_opportunity = async (req: Request, res: Response) => {
-  const email = req.user!.email;
+  const email = (req.user! as jwtPayload).email;
   try {
     const user = await User.findOne({ email });
 
@@ -22,7 +25,27 @@ export const recommend_opportunity = async (req: Request, res: Response) => {
       });
     }
 
+    // 1. Try the cache first — this is what the daily cron keeps filled in.
+    // No AI call, no database query beyond this one Redis lookup.
+    const cached = await redis.get(`recommendations:${user._id}`);
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        message: "opportunities fetched successfully",
+        data: JSON.parse(cached),
+      });
+    }
+
+    // 2. Nothing cached yet — this only happens for a brand-new user who
+    // hasn't had a cron run overnight yet. Compute once, live, then cache
+    // it so every request after this one hits the fast path above instead.
     const opportunities = await fetch_opportunities(user);
+    await redis.set(
+      `recommendations:${user._id}`,
+      JSON.stringify(opportunities),
+      "EX",
+      CACHE_TTL_SECONDS,
+    );
 
     return res.status(200).json({
       success: true,

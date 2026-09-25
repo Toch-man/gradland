@@ -1,12 +1,14 @@
 import { Request, Response } from "express";
 import Path from "../models/path_model";
 import User from "../models/user_model";
+import { jwtPayload } from "../middleware/auth_middleware";
+import Opportunity from "../models/opportunity_model";
 
 // POST /paths — user clicks "Prepare for this scholarship"
 export const create_path = async (req: Request, res: Response) => {
-  const email = req.user!.email;
+  const email = (req.user! as jwtPayload).email;
   try {
-    const { opportunity_id, title, description, gaps } = req.body;
+    const { opportunity_id, description, gaps } = req.body;
 
     if (!opportunity_id || !Array.isArray(gaps)) {
       return res.status(400).json({
@@ -14,6 +16,12 @@ export const create_path = async (req: Request, res: Response) => {
         message: "opportunity_id and gaps are required",
       });
     }
+
+    const opportunity_exist = await Opportunity.findById({
+      _id: opportunity_id,
+    });
+    !opportunity_exist &&
+      res.status(404).json({ success: false, message: "program doesnt exist" });
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -41,6 +49,7 @@ export const create_path = async (req: Request, res: Response) => {
 
     const path = await Path.create({
       user: user._id,
+
       opportunity: opportunity_id,
       milestones,
       eligibility_score,
@@ -68,7 +77,7 @@ export const create_path = async (req: Request, res: Response) => {
 
 // GET /paths — the user's dashboard of everything they're tracking
 export const get_paths = async (req: Request, res: Response) => {
-  const email = req.user!.email;
+  const email = (req.user! as jwtPayload).email;
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -98,7 +107,7 @@ export const get_paths = async (req: Request, res: Response) => {
 
 // PATCH /paths/:pathId/milestones/:milestoneId — check/uncheck a box
 export const toggle_milestone = async (req: Request, res: Response) => {
-  const email = req.user!.email;
+  const email = (req.user! as jwtPayload).email;
   try {
     const { pathId, milestoneId } = req.params as {
       pathId: string;

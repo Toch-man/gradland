@@ -73,6 +73,9 @@ export const signup = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error(error);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     return res
       .status(500)
       .json({ success: false, message: `${error.msg}`, error: error });

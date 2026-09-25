@@ -5,7 +5,7 @@ import { ai_limiter } from "../middleware/rate_limit";
 const router = express.Router();
 
 router.get(
-  "/recommend_opportunity",
+  "/recommend",
 
   authenticate,
   ai_limiter,

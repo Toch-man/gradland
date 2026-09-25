@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/user_model";
+import { redis } from "../lib/redis";
+import { jwtPayload } from "../middleware/auth_middleware";
 
 const validGoals = [
   "SCHOLARSHIP",
@@ -9,9 +11,8 @@ const validGoals = [
   "ADMISSION_ABROAD",
 ];
 
-// GET /profile — the logged-in user's own data
 export const get_profile = async (req: Request, res: Response) => {
-  const email = req.user!.email;
+  const email = (req.user! as jwtPayload).email;
   try {
     const user = await User.findOne({ email }).select("-password -token");
     if (!user) {
@@ -28,12 +29,9 @@ export const get_profile = async (req: Request, res: Response) => {
   }
 };
 
-// PATCH /profile — edit general profile fields
 export const update_profile = async (req: Request, res: Response) => {
-  const email = req.user!.email;
+  const email = (req.user! as jwtPayload).email;
   try {
-    // Whitelist what's editable here — never let req.body overwrite
-    // email, password, token, or _id directly through this route
     const allowed = [
       "full_name",
       "age",
@@ -50,7 +48,7 @@ export const update_profile = async (req: Request, res: Response) => {
     }
 
     const user = await User.findOneAndUpdate({ email }, updates, {
-      new: true,
+      returnDocument: "after",
     }).select("-password -token");
 
     if (!user) {
@@ -70,9 +68,8 @@ export const update_profile = async (req: Request, res: Response) => {
   }
 };
 
-// PATCH /profile/goals — already yours, just fixed
 export const update_goals = async (req: Request, res: Response) => {
-  const email = req.user!.email;
+  const email = (req.user! as jwtPayload).email;
   try {
     const { goals } = req.body;
 
@@ -90,7 +87,7 @@ export const update_goals = async (req: Request, res: Response) => {
     const user = await User.findOneAndUpdate(
       { email },
       { goals },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!user) {
@@ -98,6 +95,10 @@ export const update_goals = async (req: Request, res: Response) => {
         .status(404)
         .json({ success: false, message: "user not found" });
     }
+
+    // Goals changed — any cached recommendations are now based on the old
+    // goals, so clear them. The next dashboard visit will recompute fresh.
+    await redis.del(`recommendations:${user._id}`);
 
     return res.status(200).json({
       success: true,

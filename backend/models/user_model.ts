@@ -48,8 +48,6 @@ const userSchema = new Schema(
     certifications: [{ type: String }],
 
     paths: [{ type: Schema.Types.ObjectId, ref: "path" }],
-    token: { type: String, required: true, default: null },
-    token_expires: { type: Date, required: true, default: null },
   },
   { timestamps: true },
 );

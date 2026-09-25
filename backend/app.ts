@@ -11,6 +11,6 @@ app.use(cookieParser());
 
 app.use("/api/auth", auth_router);
 app.use("/api/path", path_router);
-app.use("api/user", user_router);
-app.use("api/opportunity", opportunity_router);
+app.use("/api/user", user_router);
+app.use("/api/opportunity", opportunity_router);
 export default app;

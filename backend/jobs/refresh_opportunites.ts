@@ -1,7 +1,11 @@
 import cron from "node-cron";
 import User from "../models/user_model";
-import { fetch_opportunities } from "../ai/get_path";
 import Opportunity from "../models/opportunity_model";
+import Notification from "../models/notification_model";
+import { discover_new_opportunities } from "../ai/get_path";
+import { redis } from "../lib/redis";
+
+const CACHE_TTL_SECONDS = 26 * 60 * 60;
 
 async function refreshAllUsers() {
   console.log("[cron] starting daily opportunity refresh");
@@ -10,7 +14,7 @@ async function refreshAllUsers() {
 
   for (const user of activeUsers) {
     try {
-      const matches = await fetch_opportunities(user);
+      const matches = await discover_new_opportunities(user);
 
       const newFinds = matches.filter(
         (m) =>
@@ -20,13 +24,28 @@ async function refreshAllUsers() {
       for (const item of newFinds) {
         await Opportunity.create({
           title: item.title,
-          type: "SCHOLARSHIP", // refine later based on which goal matched
-          description: item.reasoning,
+          type: "SCHOLARSHIP",
+          description: item.program_overview || item.reasoning,
           application_url: item.application_url,
           deadline: item.deadline ? new Date(item.deadline) : null,
           is_active: true,
         });
       }
+
+      if (newFinds.length > 0) {
+        await Notification.create({
+          user: user._id,
+          message: `${newFinds.length} new opportunit${newFinds.length > 1 ? "ies" : "y"} found for you`,
+          link: "/dashboard",
+        });
+      }
+
+      await redis.set(
+        `recommendations:${user._id}`,
+        JSON.stringify(matches),
+        "EX",
+        CACHE_TTL_SECONDS,
+      );
 
       console.log(
         `[cron] refreshed ${user.email}: ${newFinds.length} new opportunities saved`,
