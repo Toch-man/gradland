@@ -49,10 +49,10 @@ export default function Nav({
               <a href="#how">How it works</a>
               <a href="#opportunities">Opportunities</a>
               <a href="#why">Why Gradland</a>
-              <Link href="/login" className="btn btn-ghost-on-ink">
+              <Link href="/auth/login" className="btn btn-ghost-on-ink">
                 Sign in
               </Link>
-              <Link href="/signup" className="btn btn-gold">
+              <Link href="/auth/sign_in" className="btn btn-gold">
                 Get started
               </Link>
             </div>
