@@ -44,7 +44,7 @@ describe("GET,/api/opportunity/recommend", () => {
     expect(res.body.requires_goals).toBe(true);
   });
 
-  test("returns mathch once goals are set", async () => {
+  test("returns match once goals are set", async () => {
     const agent = request.agent(app);
 
     const signupRes = await agent.post("/api/auth/sign_up").send(test_user);

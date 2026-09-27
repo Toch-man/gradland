@@ -1,6 +1,6 @@
 import { error } from "next/dist/build/output/log";
 
-const BASE_URL = process.env.NEXT_BASE_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 const refresh_token = async (): Promise<any> => {
   const res = await fetch(`${BASE_URL}/api/auth/refresh_token`, {

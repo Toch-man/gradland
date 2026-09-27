@@ -33,6 +33,8 @@ export const signup = async (req: Request, res: Response) => {
       ...req.body,
       password: hashed_password,
     });
+
+    await new_user.save();
     const access_token = jwt.sign(
       { user_id: new_user._id, email: new_user.email },
       process.env.ACCESS_SECRET!,
@@ -63,8 +65,6 @@ export const signup = async (req: Request, res: Response) => {
       "EX",
       REFRESH_TTL_SECONDS,
     );
-
-    await new_user.save();
 
     return res.status(201).json({
       success: true,
