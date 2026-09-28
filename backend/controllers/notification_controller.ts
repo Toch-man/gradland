@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Notification from "../models/notification_model";
 import { jwtPayload } from "../middleware/auth_middleware";
 import User from "../models/user_model";
+
 // GET /notifications — latest 50
 // , plus an unread count for the bell badge
 export const get_notifications = async (req: Request, res: Response) => {
