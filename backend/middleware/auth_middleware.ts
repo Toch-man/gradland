@@ -14,7 +14,7 @@ export const authenticate = async (
     const token = req.cookies.access_token;
 
     if (!token) {
-      return res.status(403).json({
+      return res.status(401).json({
         success: false,
         message: "token unavailable",
       });
