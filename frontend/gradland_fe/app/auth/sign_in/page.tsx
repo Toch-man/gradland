@@ -172,7 +172,7 @@ export default function SignupPage() {
 
           <p className={styles.switchText}>
             Already have an account?{" "}
-            <Link href="/login" className={styles.switchLink}>
+            <Link href="/auth/login" className={styles.switchLink}>
               Sign in
             </Link>
           </p>
