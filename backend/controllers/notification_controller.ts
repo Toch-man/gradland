@@ -1,10 +1,17 @@
 import { Request, Response } from "express";
 import Notification from "../models/notification_model";
-
-// GET /notifications — latest 50, plus an unread count for the bell badge
+import { jwtPayload } from "../middleware/auth_middleware";
+import User from "../models/user_model";
+// GET /notifications — latest 50
+// , plus an unread count for the bell badge
 export const get_notifications = async (req: Request, res: Response) => {
-  const user_id = req.user!.user_id;
+  const user_id = (req.user! as jwtPayload).user_id;
   try {
+    const user = await User.find({ _id: user_id });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: " user not found" });
     const notifications = await Notification.find({ user: user_id })
       .sort({ createdAt: -1 })
       .limit(50);
@@ -28,7 +35,7 @@ export const get_notifications = async (req: Request, res: Response) => {
 
 // PATCH /notifications/:id/read — mark one as read (e.g. when clicked)
 export const mark_as_read = async (req: Request, res: Response) => {
-  const user_id = req.user!.user_id;
+  const user_id = (req.user! as jwtPayload).user_id;
   try {
     const { id } = req.params;
 
@@ -55,7 +62,7 @@ export const mark_as_read = async (req: Request, res: Response) => {
 
 // PATCH /notifications/read-all — "mark all as read" button
 export const mark_all_as_read = async (req: Request, res: Response) => {
-  const user_id = req.user!.user_id;
+  const user_id = (req.user! as jwtPayload).user_id;
   try {
     await Notification.updateMany(
       { user: user_id, is_read: false },

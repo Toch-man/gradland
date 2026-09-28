@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 export interface jwtPayload {
   user_id: string;
   email: string;
+  jti?: string;
 }
 export const authenticate = async (
   req: Request,

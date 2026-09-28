@@ -4,10 +4,12 @@ import { validationResult } from "express-validator";
 import User from "../models/user_model";
 import jwt from "jsonwebtoken";
 import { redis } from "../lib/redis";
-import hash_token from "../lib/hash_token";
+import {
+  createRefreshToken,
+  deleteRefreshTokenSession,
+  storeRefreshTokenSession,
+} from "../lib/refresh_token";
 import { jwtPayload } from "../middleware/auth_middleware";
-
-const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export const signup = async (req: Request, res: Response) => {
   const error = validationResult(req);
@@ -40,10 +42,9 @@ export const signup = async (req: Request, res: Response) => {
       process.env.ACCESS_SECRET!,
       { expiresIn: "15m" },
     );
-    const refresh_token = jwt.sign(
-      { user_id: new_user._id, email: new_user.email },
-      process.env.REFRESH_SECRET!,
-      { expiresIn: "7d" },
+    const { token: refresh_token, jti } = createRefreshToken(
+      new_user._id.toString(),
+      new_user.email,
     );
 
     res.cookie("access_token", access_token, {
@@ -59,12 +60,7 @@ export const signup = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    await redis.set(
-      `refresh_token:${new_user._id}`,
-      hash_token(refresh_token),
-      "EX",
-      REFRESH_TTL_SECONDS,
-    );
+    await storeRefreshTokenSession(jti);
 
     return res.status(201).json({
       success: true,
@@ -116,10 +112,9 @@ export const login = async (req: Request, res: Response) => {
       process.env.ACCESS_SECRET!,
       { expiresIn: "15m" },
     );
-    const refresh_token = jwt.sign(
-      { user_id: user._id, email: user.email },
-      process.env.REFRESH_SECRET!,
-      { expiresIn: "7d" },
+    const { token: refresh_token, jti } = createRefreshToken(
+      user._id.toString(),
+      user.email,
     );
 
     res.cookie("access_token", access_token, {
@@ -136,12 +131,7 @@ export const login = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    await redis.set(
-      `refresh_token:${user._id}`,
-      hash_token(refresh_token),
-      "EX",
-      REFRESH_TTL_SECONDS,
-    );
+    await storeRefreshTokenSession(jti);
     return res.status(200).json({
       success: true,
       message: "login successful",
@@ -162,7 +152,20 @@ export const log_out = async (req: Request, res: Response) => {
     const refresh_token = req.cookies.refresh_token;
 
     if (refresh_token) {
-      await redis.del(`refresh_token:${(req.user! as jwtPayload).user_id}`);
+      try {
+        const decoded = jwt.verify(
+          refresh_token,
+          process.env.REFRESH_SECRET!,
+        ) as jwtPayload;
+
+        if (decoded.jti) {
+          await deleteRefreshTokenSession(decoded.jti);
+        }
+      } catch (error: any) {
+        return res
+          .status(401)
+          .json({ success: false, message: "invalid token" });
+      }
     }
 
     res.clearCookie("access_token", {
@@ -195,9 +198,12 @@ export const refresh_token = async (req: Request, res: Response) => {
         message: "no token found please login",
       });
     }
-    let decoded: any;
+    let decoded: jwtPayload;
     try {
-      decoded = jwt.verify(refresh_token, process.env.REFRESH_SECRET!);
+      decoded = jwt.verify(
+        refresh_token,
+        process.env.REFRESH_SECRET!,
+      ) as jwtPayload;
     } catch (error: any) {
       if (error instanceof jwt.TokenExpiredError) {
         return res.status(401).json({
@@ -211,13 +217,21 @@ export const refresh_token = async (req: Request, res: Response) => {
       }
     }
 
-    const saved_token = await redis.get(`refresh_token:${decoded.user_id}`);
-    if (!saved_token || saved_token !== hash_token(refresh_token)) {
+    if (!decoded.jti) {
       return res.status(401).json({
         success: false,
-        message: "refresh token invalid  please login",
+        message: "refresh token missing session id",
       });
     }
+
+    const saved_token = await redis.get(`refresh:${decoded.jti}`);
+    if (!saved_token) {
+      return res.status(401).json({
+        success: false,
+        message: "refresh token invalid please login",
+      });
+    }
+
     const user = await User.findOne({ email: decoded.email });
 
     if (!user) {
@@ -227,16 +241,17 @@ export const refresh_token = async (req: Request, res: Response) => {
       });
     }
 
+    await deleteRefreshTokenSession(decoded.jti);
+
     const new_access_token = jwt.sign(
       { user_id: user._id, email: user.email },
       process.env.ACCESS_SECRET!,
       { expiresIn: "15m" },
     );
 
-    const new_refresh_token = jwt.sign(
-      { user_id: user._id, email: user.email },
-      process.env.REFRESH_SECRET!,
-      { expiresIn: "7d" },
+    const { token: new_refresh_token, jti: new_jti } = createRefreshToken(
+      user._id.toString(),
+      user.email,
     );
 
     res.cookie("access_token", new_access_token, {
@@ -252,12 +267,9 @@ export const refresh_token = async (req: Request, res: Response) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    await redis.set(
-      `refresh_token:${user._id}`,
-      hash_token(new_refresh_token),
-      "EX",
-      REFRESH_TTL_SECONDS,
-    );
+
+    await storeRefreshTokenSession(new_jti);
+
     return res.status(200).json({ success: true, message: "token refreshed" });
   } catch (error: any) {
     console.error(error);
