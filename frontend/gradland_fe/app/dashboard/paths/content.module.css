@@ -1,0 +1,173 @@
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  margin: 0 0 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cardHead h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.readyTag {
+  background: rgba(92, 139, 118, 0.14);
+  color: var(--moss);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.progressBar {
+  height: 6px;
+  background: var(--paper-dim);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--gold);
+}
+
+.progressLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.milestoneList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.milestoneRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.noMilestones {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 14.5px;
+  grid-column: 1 / -1;
+}
+
+.error {
+  color: #b3402f;
+  font-size: 14.5px;
+  grid-column: 1 / -1;
+}
+
+.tagEligible,
+.tagWorkable,
+.tagNotEligible {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.tagEligible {
+  background: rgba(92, 139, 118, 0.14);
+  color: var(--moss);
+}
+
+.tagWorkable {
+  background: rgba(227, 166, 62, 0.14);
+  color: var(--gold-deep);
+}
+
+.tagNotEligible {
+  background: rgba(179, 64, 47, 0.1);
+  color: #b3402f;
+}
+
+.programOverview {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.reasoning {
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.gapsList {
+  font-size: 13px;
+  padding-left: 18px;
+  margin: 0 0 10px;
+}
+
+.strategyBox {
+  background: rgba(227, 166, 62, 0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+
+.strategyLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-deep);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.strategyText {
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.matchesHeader {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}

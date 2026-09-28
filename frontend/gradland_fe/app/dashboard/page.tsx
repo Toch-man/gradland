@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import MilestoneModal from "@/components/MilestoneModal";
 import styles from "./dashboard.module.css";
-import { use_current_user, use_log_out } from "@/hooks/use_auth";
+import { use_log_out } from "@/hooks/use_auth";
+import { use_current_user } from "@/hooks/use_profile";
 import {
   use_recommendations,
   use_paths,

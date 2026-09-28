@@ -17,14 +17,6 @@ type LogInInput = {
   password: string;
 };
 
-export const use_current_user = () => {
-  return useQuery({
-    queryKey: ["current_user"],
-    queryFn: () => api_fetch("/api/user/user"),
-    retry: false,
-  });
-};
-
 export const use_sign_up = () => {
   const queryClient = useQueryClient();
   return useMutation({
