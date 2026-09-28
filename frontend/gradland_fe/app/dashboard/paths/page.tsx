@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import MilestoneModal from "@/components/MilestoneModal";
-import styles from "./content.module.css";
+import styles from "../content.module.css";
 import {
   use_paths,
   use_toggle_milestone,
