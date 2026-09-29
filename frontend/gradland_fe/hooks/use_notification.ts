@@ -26,7 +26,7 @@ export const use_mark_as_read = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
-      api_fetch(`/notifications/${id}/read`, { method: "PATCH" }),
+      api_fetch(`/api/notifications/${id}/read`, { method: "PATCH" }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });

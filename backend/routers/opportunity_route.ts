@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.get(
   "/recommend",
-
   authenticate,
   ai_limiter,
   opportunity_controller.recommend_opportunity,
