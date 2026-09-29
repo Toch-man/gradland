@@ -58,7 +58,7 @@ const api_fetch = async (
 
     return data;
   } catch (error: any) {
-    console.error(error);
+    console.error(error.message);
     throw error;
   }
 };
