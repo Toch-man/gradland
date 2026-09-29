@@ -12,7 +12,7 @@ export const authenticate = async (
   next: NextFunction,
 ) => {
   try {
-    const token = req.cookies.refresh_token;
+    const token = req.cookies.access_token;
 
     if (!token) {
       return res.status(401).json({

@@ -10,7 +10,7 @@ const refresh_token = async (): Promise<any> => {
       "Content-type": "application/json",
     },
   });
-  const data: any = res.json;
+  const data: any = await res.json;
   if (res.status == 401) {
     throw new Error(data.message);
   }
