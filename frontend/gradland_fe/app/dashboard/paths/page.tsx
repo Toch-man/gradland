@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MilestoneModal from "@/components/MilestoneModal";
+import Dialog from "@/components/dialog";
 import styles from "../content.module.css";
 import {
   use_paths,
@@ -10,13 +11,22 @@ import {
 } from "@/hooks/use_opportunity";
 
 export default function PathsPage() {
-  const { data: paths, isPending: pathsLoading } = use_paths();
+  const { data, isPending: pathsLoading } = use_paths();
   const toggleMilestone = use_toggle_milestone();
-
+  const paths = data?.data;
   const [activeMilestone, setActiveMilestone] = useState<{
     pathId: string;
     milestone: Milestone;
   } | null>(null);
+  const [showEmptyDialog, setShowEmptyDialog] = useState(false);
+
+  // Show the guidance dialog once, the first time we confirm there are
+  // genuinely zero tracked paths (not while still loading).
+  useEffect(() => {
+    if (!pathsLoading && paths?.length === 0) {
+      setShowEmptyDialog(true);
+    }
+  }, [pathsLoading, paths]);
 
   function submitMilestone(details: Record<string, any>) {
     if (!activeMilestone) return;
@@ -33,7 +43,7 @@ export default function PathsPage() {
   function uncheckMilestone(pathId: string, milestone: Milestone) {
     toggleMilestone.mutate({ pathId, milestoneId: milestone._id });
   }
-
+  console.log(paths);
   return (
     <div>
       <h1 className={styles.pageTitle}>Your paths</h1>
@@ -108,6 +118,16 @@ export default function PathsPage() {
           </div>
         ))}
       </div>
+
+      {showEmptyDialog && (
+        <Dialog
+          title="Nothing tracked yet"
+          message="You haven't picked an opportunity to work toward yet. Head to Recommended to find a match and start tracking it."
+          actionLabel="Go to Recommended"
+          actionHref="/dashboard/matches"
+          onClose={() => setShowEmptyDialog(false)}
+        />
+      )}
 
       {activeMilestone && (
         <MilestoneModal

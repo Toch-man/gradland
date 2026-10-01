@@ -17,7 +17,7 @@ type NotificationsResponse = {
 export const use_notifications = () => {
   return useQuery<NotificationsResponse>({
     queryKey: ["notifications"],
-    queryFn: () => api_fetch("/notifications"),
+    queryFn: () => api_fetch("/api/notifications"),
     refetchInterval: 60 * 1000,
   });
 };
@@ -35,7 +35,8 @@ export const use_mark_as_read = () => {
 export const use_mark_all_as_read = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api_fetch("/notifications/read-all", { method: "PATCH" }),
+    mutationFn: () =>
+      api_fetch("/api/notifications/read-all", { method: "PATCH" }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });

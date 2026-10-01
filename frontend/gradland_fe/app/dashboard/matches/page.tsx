@@ -1,24 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import {
   use_recommendations,
   use_create_path,
   Match,
 } from "@/hooks/use_opportunity";
+import Dialog from "@/components/dialog";
 import styles from "../content.module.css";
 
 export default function MatchesPage() {
   const {
-    data: matches,
+    data,
     isFetching: matchesLoading,
     error: matchesError,
     refetch: refetchMatches,
   } = use_recommendations();
-
+  const matches = data?.data;
   const createPath = use_create_path();
+  const [showNoIdDialog, setShowNoIdDialog] = useState(false);
 
   function prepareForOpportunity(match: Match) {
-    if (!match.opportunity_id) return;
+    if (!match.opportunity_id) {
+      // This happens for a live-search find that hasn't been saved to our
+      // own database yet — nothing to link a Path to until that happens.
+      setShowNoIdDialog(true);
+      return;
+    }
     createPath.mutate({
       opportunity_id: match.opportunity_id,
       title: match.title,
@@ -133,6 +141,16 @@ export default function MatchesPage() {
           </div>
         ))}
       </div>
+
+      {showNoIdDialog && (
+        <Dialog
+          title="Not ready to track yet"
+          message="This opportunity was found from a live web search and hasn't been added to our database yet. Try again after your next refresh, or check back soon — we save new finds automatically."
+          actionLabel="Got it"
+          actionHref="/dashboard/matches"
+          onClose={() => setShowNoIdDialog(false)}
+        />
+      )}
     </div>
   );
 }

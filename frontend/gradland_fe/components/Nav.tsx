@@ -155,7 +155,7 @@ function NotificationBell({
             </ul>
 
             <Link
-              href="/notifications"
+              href="/dashboard/notification"
               className={styles.viewAllLink}
               onClick={() => setOpen(false)}
             >

@@ -7,10 +7,10 @@ import { use_notifications } from "@/hooks/use_notification";
 import styles from "./side_bar.module.css";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Your paths" },
+  { href: "/dashboard/paths", label: "Your paths" },
   { href: "/dashboard/matches", label: "Recommended" },
   { href: "/dashboard/profile", label: "Profile" },
-  { href: "/dashboard/notifications", label: "Notifications" },
+  { href: "/dashboard/notification", label: "Notifications" },
 ];
 
 export default function Sidebar() {
@@ -48,7 +48,7 @@ export default function Sidebar() {
               className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
             >
               <span>{item.label}</span>
-              {item.href === "/dashboard/notifications" && unreadCount > 0 && (
+              {item.href === "/dashboard/notification" && unreadCount > 0 && (
                 <span className={styles.badge}>
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
