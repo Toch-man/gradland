@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import { calculateAge } from "../jobs/calculate_age";
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema(
@@ -7,7 +7,7 @@ const userSchema = new Schema(
     full_name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    age: { type: Number, required: true },
+    date_of_birth: { type: Date, required: true },
     status: {
       type: String,
       enum: ["STUDENT", "GRADUATE", "NIL"],
@@ -49,7 +49,14 @@ const userSchema = new Schema(
 
     paths: [{ type: Schema.Types.ObjectId, ref: "path" }],
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
+userSchema.virtual("age").get(function (this: any) {
+  return calculateAge(this.date_of_birth);
+});
 export default mongoose.model("User", userSchema);

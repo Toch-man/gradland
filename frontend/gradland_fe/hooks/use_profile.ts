@@ -3,7 +3,7 @@ import api_fetch from "@/lib/api";
 
 type ProfileUpdateInput = {
   full_name?: string;
-  age?: number;
+  date_of_birth?: string;
   status?: "STUDENT" | "GRADUATE" | "NIL";
   school?: string;
   course_of_study?: string;
