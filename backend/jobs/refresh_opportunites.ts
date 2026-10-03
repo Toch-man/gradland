@@ -22,7 +22,7 @@ async function refreshAllUsers() {
       );
 
       for (const item of newFinds) {
-        await Opportunity.create({
+        const opportunity = await Opportunity.create({
           title: item.title,
           type: "SCHOLARSHIP",
           description: item.program_overview || item.reasoning,
@@ -30,6 +30,13 @@ async function refreshAllUsers() {
           deadline: item.deadline ? new Date(item.deadline) : null,
           is_active: true,
         });
+
+        // Patch the match object itself so the cached version we're about
+        // to save reflects reality — this just got saved for real, so it
+        // should no longer look like an unsaved live-search find to anyone
+        // reading the cache later.
+        item.opportunity_id = opportunity._id.toString();
+        item.source = "DATABASE";
       }
 
       if (newFinds.length > 0) {

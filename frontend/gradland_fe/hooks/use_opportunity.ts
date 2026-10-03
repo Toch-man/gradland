@@ -119,9 +119,11 @@ export const use_create_path = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: {
-      opportunity_id: string;
+      opportunity_id?: string | null;
       title: string;
       description: string;
+      application_url?: string | null;
+      deadline?: string | null;
       gaps: Gap[];
     }) =>
       api_fetch("/api/path/create_path", {
@@ -150,6 +152,17 @@ export const use_toggle_milestone = () => {
         method: "PATCH",
         body: JSON.stringify({ details }),
       }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["paths"] });
+    },
+  });
+};
+
+export const use_mark_applied = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (pathId: string) =>
+      api_fetch(`/paths/${pathId}/applied`, { method: "PATCH" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paths"] });
     },

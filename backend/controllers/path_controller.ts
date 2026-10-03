@@ -136,6 +136,51 @@ export const get_paths = async (req: Request, res: Response) => {
   }
 };
 
+// PATCH /paths/:pathId/applied — user clicked "Apply now" and confirms
+// they actually submitted the application. Only allowed once a path has
+// hit ELIGIBLE, since you can't have applied to something you're not
+// even ready for yet.
+export const mark_applied = async (req: Request, res: Response) => {
+  const email = (req.user! as jwtPayload).email;
+  try {
+    const { pathId } = req.params;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "user not found" });
+    }
+
+    const path = await Path.findOne({ _id: pathId, user: user._id });
+    if (!path) {
+      return res
+        .status(404)
+        .json({ success: false, message: "path not found" });
+    }
+
+    if (path.status !== "ELIGIBLE") {
+      return res.status(400).json({
+        success: false,
+        message: "This path isn't marked eligible yet",
+      });
+    }
+
+    path.status = "APPLIED";
+    await path.save();
+    const populated = await path.populate("opportunity");
+
+    return res
+      .status(200)
+      .json({ success: true, message: "marked as applied", data: populated });
+  } catch (error: any) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "internal server error" });
+  }
+};
+
 export const toggle_milestone = async (req: Request, res: Response) => {
   const email = (req.user! as jwtPayload).email;
   try {

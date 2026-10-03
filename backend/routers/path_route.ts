@@ -17,6 +17,12 @@ router.get(
   path_controller.get_paths,
 );
 router.patch(
+  "/:pathId/applied",
+  general_limiter,
+  authenticate,
+  path_controller.mark_applied,
+);
+router.patch(
   "/:pathId/milestones/:milestoneId",
 
   authenticate,

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { use_current_user } from "@/hooks/use_profile";
-import { use_update_profile } from "@/hooks/use_profile";
+import { use_current_user, use_update_profile } from "@/hooks/use_profile";
 import { use_update_goals, Goal } from "@/hooks/use_goal";
 import { use_paths } from "@/hooks/use_opportunity";
 import styles from "./profile.module.css";
@@ -20,13 +19,13 @@ const GOAL_LABELS: Record<string, string> = Object.fromEntries(
 );
 
 export default function ProfilePage() {
-  const { data: res, isPending: userLoading } = use_current_user();
-  const { data } = use_paths();
+  const { data: user_res, isPending: userLoading } = use_current_user();
+  const { data: path_res } = use_paths();
   const updateProfile = use_update_profile();
   const updateGoals = use_update_goals();
-
+  const user = user_res?.data;
+  const paths = path_res?.data;
   const [isEditing, setIsEditing] = useState(false);
-
   const [form, setForm] = useState({
     full_name: "",
     date_of_birth: "",
@@ -35,8 +34,7 @@ export default function ProfilePage() {
     current_grade: "",
   });
   const [selectedGoals, setSelectedGoals] = useState<Goal[]>([]);
-  const user = res?.data;
-  const paths = data?.data;
+
   useEffect(() => {
     if (user) {
       setForm({
@@ -80,67 +78,113 @@ export default function ProfilePage() {
   if (userLoading)
     return <p className={styles.loading}>Loading your profile…</p>;
 
-  const readyPaths = paths?.filter((p) => p.status === "ELIGIBLE").length ?? 0;
+  const trackedCount = paths?.length ?? 0;
+  const eligibleCount =
+    paths?.filter((p) => p.status === "ELIGIBLE").length ?? 0;
+  const appliedCount =
+    paths?.filter((p) => (p.status as string) === "APPLIED").length ?? 0;
 
   return (
     <div>
-      <h1 className={styles.pageTitle}>Profile</h1>
-
       {!isEditing && (
         <>
-          <div className={styles.statGrid}>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{paths?.length ?? 0}</span>
-              <span className={styles.statLabel}>Opportunities tracked</span>
+          <div className={styles.heroCard}>
+            <div className={styles.avatar}>
+              {user?.full_name ? user.full_name.charAt(0).toUpperCase() : "?"}
             </div>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{readyPaths}</span>
-              <span className={styles.statLabel}>Ready to apply</span>
-            </div>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{user?.age ?? "—"}</span>
-              <span className={styles.statLabel}>Age</span>
+            <div>
+              <h1 className={styles.heroName}>
+                {user?.full_name || "Your profile"}
+              </h1>
+              <p className={styles.heroSub}>
+                {user?.course_of_study || "Course not set"}
+                {user?.school ? ` · ${user.school}` : ""}
+              </p>
             </div>
           </div>
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Your details</h2>
-            <dl className={styles.detailList}>
-              <div className={styles.detailRow}>
-                <dt>Full name</dt>
-                <dd>{user?.full_name || "—"}</dd>
-              </div>
-              <div className={styles.detailRow}>
-                <dt>School</dt>
-                <dd>{user?.school || "—"}</dd>
-              </div>
-              <div className={styles.detailRow}>
-                <dt>Course of study</dt>
-                <dd>{user?.course_of_study || "—"}</dd>
-              </div>
-              <div className={styles.detailRow}>
-                <dt>Current grade</dt>
-                <dd>{user?.current_grade ?? "—"}</dd>
-              </div>
-            </dl>
-          </section>
+          <div className={styles.detailGrid}>
+            <div className={styles.detailBox} style={{ animationDelay: "0ms" }}>
+              <span className={styles.detailIcon}>🎂</span>
+              <span className={styles.detailValue}>{user?.age ?? "—"}</span>
+              <span className={styles.detailLabel}>Age</span>
+            </div>
+            <div
+              className={styles.detailBox}
+              style={{ animationDelay: "40ms" }}
+            >
+              <span className={styles.detailIcon}>📊</span>
+              <span className={styles.detailValue}>
+                {user?.current_grade ?? "—"}
+              </span>
+              <span className={styles.detailLabel}>Current grade</span>
+            </div>
+            <div
+              className={styles.detailBox}
+              style={{ animationDelay: "80ms" }}
+            >
+              <span className={styles.detailIcon}>🏫</span>
+              <span className={styles.detailValue}>{user?.school || "—"}</span>
+              <span className={styles.detailLabel}>School</span>
+            </div>
+            <div
+              className={styles.detailBox}
+              style={{ animationDelay: "120ms" }}
+            >
+              <span className={styles.detailIcon}>📖</span>
+              <span className={styles.detailValue}>
+                {user?.course_of_study || "—"}
+              </span>
+              <span className={styles.detailLabel}>Course</span>
+            </div>
+          </div>
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Your goals</h2>
-            {user?.goals?.length ? (
-              <div className={styles.goalTagRow}>
-                {user.goals.map((g: string) => (
-                  <span key={g} className={styles.goalTag}>
-                    {GOAL_LABELS[g] ?? g}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className={styles.sectionSubtitle}>No goals set yet.</p>
-            )}
-          </section>
+          <h2 className={styles.sectionTitle}>Your activity</h2>
+          <div className={styles.statGrid}>
+            <div
+              className={`${styles.statBox} ${styles.statTracked}`}
+              style={{ animationDelay: "160ms" }}
+            >
+              <span className={styles.statIcon}>📌</span>
+              <span className={styles.statValue}>{trackedCount}</span>
+              <span className={styles.statLabel}>Tracking</span>
+            </div>
+            <div
+              className={`${styles.statBox} ${styles.statEligible}`}
+              style={{ animationDelay: "200ms" }}
+            >
+              <span className={styles.statIcon}>✅</span>
+              <span className={styles.statValue}>{eligibleCount}</span>
+              <span className={styles.statLabel}>Eligible</span>
+            </div>
+            <div
+              className={`${styles.statBox} ${styles.statApplied}`}
+              style={{ animationDelay: "240ms" }}
+            >
+              <span className={styles.statIcon}>🎉</span>
+              <span className={styles.statValue}>{appliedCount}</span>
+              <span className={styles.statLabel}>Applied</span>
+            </div>
+          </div>
 
-          <button className="btn btn-gold" onClick={() => setIsEditing(true)}>
+          <h2 className={styles.sectionTitle}>Your goals</h2>
+          {user?.goals?.length ? (
+            <div className={styles.goalTagRow}>
+              {user.goals.map((g: string) => (
+                <span key={g} className={styles.goalTag}>
+                  {GOAL_LABELS[g] ?? g}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.sectionSubtitle}>No goals set yet.</p>
+          )}
+
+          <button
+            className="btn btn-gold"
+            style={{ marginTop: 20 }}
+            onClick={() => setIsEditing(true)}
+          >
             Edit profile
           </button>
         </>
@@ -148,9 +192,9 @@ export default function ProfilePage() {
 
       {isEditing && (
         <>
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Your details</h2>
+          <h1 className={styles.pageTitle}>Edit profile</h1>
 
+          <section className={styles.section}>
             <div className={styles.fieldGrid}>
               <label className={styles.field}>
                 <span>Full name</span>
@@ -203,11 +247,6 @@ export default function ProfilePage() {
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Your goals</h2>
-            <p className={styles.sectionSubtitle}>
-              This is what Gradland uses to find your matches. Pick as many as
-              apply.
-            </p>
-
             <div className={styles.goalGrid}>
               {GOAL_OPTIONS.map((option) => {
                 const isSelected = selectedGoals.includes(option.value);

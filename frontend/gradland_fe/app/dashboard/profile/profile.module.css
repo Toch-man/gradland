@@ -1,3 +1,14 @@
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .pageTitle {
   font-family: var(--font-display);
   font-size: 26px;
@@ -10,6 +21,146 @@
   font-size: 14.5px;
 }
 
+.heroCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--ink);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  color: var(--text-on-ink);
+  animation: fadeInUp 0.4s ease both;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.heroName {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 4px;
+}
+
+.heroSub {
+  font-size: 13.5px;
+  color: var(--text-on-ink-muted);
+  margin: 0;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 28px 0 12px;
+}
+
+.sectionSubtitle {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.detailGrid,
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.statGrid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 640px) {
+  .detailGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .statGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.detailBox,
+.statBox {
+  background: var(--paper);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.detailIcon,
+.statIcon {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.detailValue {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detailLabel,
+.statLabel {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.statTracked {
+  background: rgba(92, 139, 118, 0.08);
+  border-color: rgba(92, 139, 118, 0.25);
+}
+
+.statEligible {
+  background: rgba(227, 166, 62, 0.08);
+  border-color: rgba(227, 166, 62, 0.3);
+}
+
+.statApplied {
+  background: rgba(143, 94, 191, 0.08);
+  border-color: rgba(143, 94, 191, 0.3);
+}
+
+.goalTagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.goalTag {
+  background: rgba(92, 139, 118, 0.14);
+  color: var(--moss);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
 .section {
   background: var(--paper);
   border: 1px solid var(--border-soft);
@@ -19,23 +170,10 @@
   margin-bottom: 20px;
 }
 
-.sectionTitle {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 0 0 6px;
-}
-
-.sectionSubtitle {
-  font-size: 13.5px;
-  color: var(--text-muted);
-  margin: 0 0 16px;
-}
-
 .fieldGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-  margin-bottom: 18px;
 }
 
 @media (max-width: 480px) {
@@ -71,7 +209,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-top: 12px;
 }
 
 .goalOption {
@@ -93,82 +231,7 @@
 .error {
   font-size: 13.5px;
   color: #b3402f;
-  margin: 0 0 12px;
-}
-
-.success {
-  font-size: 13.5px;
-  color: var(--moss);
-  margin: 0 0 12px;
-}
-
-.statGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-  max-width: 560px;
-}
-
-.statBox {
-  background: var(--paper);
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.statValue {
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 500;
-}
-
-.statLabel {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.detailList {
-  margin: 0;
-}
-
-.detailRow {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-soft);
-  font-size: 14px;
-}
-
-.detailRow:last-child {
-  border-bottom: none;
-}
-
-.detailRow dt {
-  color: var(--text-muted);
-}
-
-.detailRow dd {
-  margin: 0;
-  font-weight: 500;
-}
-
-.goalTagRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.goalTag {
-  background: rgba(92, 139, 118, 0.14);
-  color: var(--moss);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 999px;
+  margin: 12px 0;
 }
 
 .editActions {

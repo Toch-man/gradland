@@ -7,21 +7,29 @@ import styles from "../content.module.css";
 import {
   use_paths,
   use_toggle_milestone,
+  use_mark_applied,
   Milestone,
 } from "@/hooks/use_opportunity";
 
+const TYPE_ICON: Record<string, string> = {
+  SCHOLARSHIP: "🎓",
+  INTERNSHIP: "💼",
+  JOB: "🏢",
+  FELLOWSHIP: "📚",
+  ADMISSION: "🏫",
+};
+
 export default function PathsPage() {
-  const { data, isPending: pathsLoading } = use_paths();
+  const { data: res, isPending: pathsLoading } = use_paths();
   const toggleMilestone = use_toggle_milestone();
-  const paths = data?.data;
+  const markApplied = use_mark_applied();
+  const paths = res?.data ?? [];
   const [activeMilestone, setActiveMilestone] = useState<{
     pathId: string;
     milestone: Milestone;
   } | null>(null);
   const [showEmptyDialog, setShowEmptyDialog] = useState(false);
 
-  // Show the guidance dialog once, the first time we confirm there are
-  // genuinely zero tracked paths (not while still loading).
   useEffect(() => {
     if (!pathsLoading && paths?.length === 0) {
       setShowEmptyDialog(true);
@@ -43,7 +51,7 @@ export default function PathsPage() {
   function uncheckMilestone(pathId: string, milestone: Milestone) {
     toggleMilestone.mutate({ pathId, milestoneId: milestone._id });
   }
-  console.log(paths);
+
   return (
     <div>
       <h1 className={styles.pageTitle}>Your paths</h1>
@@ -62,9 +70,17 @@ export default function PathsPage() {
         {paths?.map((path) => (
           <div key={path._id} className={styles.card}>
             <div className={styles.cardHead}>
-              <h3>{path.opportunity.title}</h3>
+              <div className={styles.cardTitleRow}>
+                <span className={styles.typeIcon}>
+                  {TYPE_ICON[(path.opportunity as any).type] ?? "🌟"}
+                </span>
+                <h3>{path.opportunity.title}</h3>
+              </div>
               {path.status === "ELIGIBLE" && (
                 <span className={styles.readyTag}>Ready to apply</span>
+              )}
+              {path.status === "APPLIED" && (
+                <span className={styles.appliedTag}>Applied</span>
               )}
             </div>
 
@@ -104,16 +120,26 @@ export default function PathsPage() {
               )}
             </div>
 
-            {path.status === "ELIGIBLE" && path.opportunity.application_url && (
-              <a
-                href={path.opportunity.application_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-gold"
-                style={{ marginTop: 16, display: "inline-block" }}
-              >
-                Apply now
-              </a>
+            {path.status === "ELIGIBLE" && (
+              <div className={styles.cardActions}>
+                {path.opportunity.application_url && (
+                  <a
+                    href={path.opportunity.application_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-gold"
+                  >
+                    Apply now
+                  </a>
+                )}
+                <button
+                  className="btn btn-ghost-on-paper"
+                  onClick={() => markApplied.mutate(path._id)}
+                  disabled={markApplied.isPending}
+                >
+                  {markApplied.isPending ? "Saving…" : "Mark as applied"}
+                </button>
+              </div>
             )}
           </div>
         ))}
