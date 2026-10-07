@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/user_model";
-import { fetch_opportunities } from "../ai/get_path";
+import { discover_new_opportunities } from "../ai/get_path";
 import { redis } from "../lib/redis";
 import { jwtPayload } from "../middleware/auth_middleware";
 
@@ -25,27 +25,42 @@ export const recommend_opportunity = async (req: Request, res: Response) => {
       });
     }
 
+    const cacheKey = `recommendations:${user._id}`;
+
     // 1. Try the cache first — this is what the daily cron keeps filled in.
-    // No AI call, no database query beyond this one Redis lookup.
-    const cached = await redis.get(`recommendations:${user._id}`);
-    if (cached && JSON.parse(cached).length > 0) {
-      return res.status(200).json({
-        success: true,
-        message: "opportunities fetched successfully",
-        data: JSON.parse(cached),
-      });
+    // Empty arrays are treated as a cache miss so we refresh and re-seed.
+    const cached = await redis.get(cacheKey);
+    if (cached !== null) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return res.status(200).json({
+            success: true,
+            message: "opportunities fetched successfully",
+            data: parsed,
+          });
+        }
+
+        await redis.del(cacheKey);
+      } catch {
+        await redis.del(cacheKey);
+      }
     }
 
-    // 2. Nothing cached yet — this only happens for a brand-new user who
-    // hasn't had a cron run overnight yet. Compute once, live, then cache
-    // it so every request after this one hits the fast path above instead.
-    const opportunities = await fetch_opportunities(user);
-    await redis.set(
-      `recommendations:${user._id}`,
-      JSON.stringify(opportunities),
-      "EX",
-      CACHE_TTL_SECONDS,
-    );
+    // 2. No valid cache yet — this is the fresh-user path. Do the live
+    // discovery pass once, then cache only meaningful results.
+    const opportunities = await discover_new_opportunities(user);
+
+    if (Array.isArray(opportunities) && opportunities.length > 0) {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(opportunities),
+        "EX",
+        CACHE_TTL_SECONDS,
+      );
+    } else {
+      await redis.del(cacheKey);
+    }
 
     return res.status(200).json({
       success: true,

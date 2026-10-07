@@ -1,8 +1,20 @@
-import { afterAll, beforeAll, afterEach, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import app from "../app";
 import mongoose from "mongoose";
 import request from "supertest";
 import { MongoMemoryServer } from "mongodb-memory-server";
+import { recommend_opportunity } from "../controllers/opportunity_controller";
+import { redis } from "../lib/redis";
+import User from "../models/user_model";
+import * as opportunityAi from "../ai/get_path";
 const test_user = {
   full_name: "Test User",
   email: "test@example.com",
@@ -26,6 +38,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   const collections = mongoose.connection.collections;
   for (const key in collections) {
     await collections[key].deleteMany({});
@@ -60,4 +73,49 @@ describe("GET,/api/opportunity/recommend", () => {
     expect(res.body.success).toBe(true);
     expect(res.body).toHaveProperty("data");
   }, 30000);
+
+  test("invalidates empty cache and refreshes recommendations", async () => {
+    vi.spyOn(User, "findOne").mockResolvedValue({
+      _id: "user-123",
+      email: "test@example.com",
+      goals: ["SCHOLARSHIP"],
+    } as any);
+    vi.spyOn(redis, "get").mockResolvedValue("[]");
+    vi.spyOn(redis, "del").mockResolvedValue(1 as any);
+    const discoverSpy = vi
+      .spyOn(opportunityAi, "discover_new_opportunities")
+      .mockResolvedValue([
+        {
+          title: "Fresh scholarship",
+          source: "DATABASE",
+          eligibility_status: "ELIGIBLE",
+          fit_score: 90,
+          reasoning: "Good fit",
+          program_overview: "Overview",
+          application_strategy: "Apply now",
+          gaps: [],
+        },
+      ] as any);
+
+    const req = { user: { email: "test@example.com" } } as any;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    } as any;
+
+    await recommend_opportunity(req, res);
+
+    expect(redis.del).toHaveBeenCalledWith("recommendations:user-123");
+    expect(discoverSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: "user-123", email: "test@example.com" }),
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.arrayContaining([
+          expect.objectContaining({ title: "Fresh scholarship" }),
+        ]),
+      }),
+    );
+  });
 });
