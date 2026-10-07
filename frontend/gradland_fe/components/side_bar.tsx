@@ -7,10 +7,10 @@ import { use_notifications } from "@/hooks/use_notification";
 import styles from "./side_bar.module.css";
 
 const NAV_ITEMS = [
-  { href: "/dashboard/paths", label: "Your paths" },
-  { href: "/dashboard/matches", label: "Recommended" },
-  { href: "/dashboard/profile", label: "Profile" },
-  { href: "/dashboard/notification", label: "Notifications" },
+  { href: "/dashboard/paths", label: "Your paths", prefetch: true },
+  { href: "/dashboard/matches", label: "Recommended", prefetch: true },
+  { href: "/dashboard/profile", label: "Profile", prefetch: true },
+  { href: "/dashboard/notification", label: "Notifications", prefetch: false },
 ];
 
 export default function Sidebar() {
@@ -46,6 +46,7 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
+              prefetch={item.prefetch}
             >
               <span>{item.label}</span>
               {item.href === "/dashboard/notification" && unreadCount > 0 && (

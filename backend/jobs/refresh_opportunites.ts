@@ -24,7 +24,7 @@ async function refreshAllUsers() {
       for (const item of newFinds) {
         const opportunity = await Opportunity.create({
           title: item.title,
-          type: "SCHOLARSHIP",
+          type: item.type,
           description: item.program_overview || item.reasoning,
           application_url: item.application_url,
           deadline: item.deadline ? new Date(item.deadline) : null,
@@ -46,13 +46,17 @@ async function refreshAllUsers() {
           link: "/dashboard",
         });
       }
-
-      await redis.set(
-        `recommendations:${user._id}`,
-        JSON.stringify(matches),
-        "EX",
-        CACHE_TTL_SECONDS,
-      );
+      if (newFinds.length !== 0) {
+        await redis.set(
+          `recommendations:${user._id}`,
+          JSON.stringify(matches),
+          "EX",
+          CACHE_TTL_SECONDS,
+        );
+        console.log(
+          `[cron] refreshed ${user.email}: no new opportunities, cache updated`,
+        );
+      }
 
       console.log(
         `[cron] refreshed ${user.email}: ${newFinds.length} new opportunities saved`,

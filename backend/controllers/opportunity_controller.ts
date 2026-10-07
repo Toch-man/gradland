@@ -28,7 +28,7 @@ export const recommend_opportunity = async (req: Request, res: Response) => {
     // 1. Try the cache first — this is what the daily cron keeps filled in.
     // No AI call, no database query beyond this one Redis lookup.
     const cached = await redis.get(`recommendations:${user._id}`);
-    if (cached) {
+    if (cached && JSON.parse(cached).length > 0) {
       return res.status(200).json({
         success: true,
         message: "opportunities fetched successfully",

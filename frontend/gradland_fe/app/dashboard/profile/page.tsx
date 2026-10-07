@@ -56,22 +56,25 @@ export default function ProfilePage() {
     );
   }
 
-  function saveAll() {
-    updateProfile.mutate({
-      full_name: form.full_name,
-      date_of_birth: form.date_of_birth || undefined,
-      school: form.school,
-      course_of_study: form.course_of_study,
-      current_grade: form.current_grade
-        ? Number(form.current_grade)
-        : undefined,
-    });
-    if (selectedGoals.length > 0) {
-      updateGoals.mutate(selectedGoals, {
-        onSuccess: () => setIsEditing(false),
-      });
-    } else {
+  async function saveAll() {
+    try {
+      await Promise.all([
+        updateProfile.mutateAsync({
+          full_name: form.full_name,
+          date_of_birth: form.date_of_birth || undefined,
+          school: form.school,
+          course_of_study: form.course_of_study,
+          current_grade: form.current_grade
+            ? Number(form.current_grade)
+            : undefined,
+        }),
+        updateGoals.mutateAsync(selectedGoals),
+      ]);
+
       setIsEditing(false);
+    } catch (error) {
+      // Keep the form open so the user can correct or retry.
+      console.error("Failed to save profile:", error);
     }
   }
 
