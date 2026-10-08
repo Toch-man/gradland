@@ -24,6 +24,14 @@ const matchSchema = z.object({
       ),
       application_url: z.string().optional(),
       deadline: z.string().optional(),
+
+      type: z.enum([
+        "SCHOLARSHIP",
+        "INTERNSHIP",
+        "JOB",
+        "FELLOWSHIP",
+        "ADMISSION",
+      ]),
     }),
   ),
 });
@@ -58,6 +66,8 @@ You will score each opportunity for this user and classify it as:
   can sometimes be offset by strong experience)
 - NOT_ELIGIBLE: user fails a hard, unchangeable requirement
   (e.g. age above max_age, wrong country/citizenship, degree level mismatch)
+- type: what kind of opportunity this is: SCHOLARSHIP, INTERNSHIP, JOB,
+  FELLOWSHIP (funded master's/PhD programmes) or ADMISSION (university admission).
 
 Gaps are not limited to eligibility criteria (grades, experience, age) — they also include
 required PROCESS steps mentioned in the opportunity's description or search content, such as
@@ -91,48 +101,119 @@ function normalize(matches: any[]) {
   return matches
     .map((m) => ({
       ...m,
-      opportunity_id: m.opportunity_id ?? null,
-      application_url: m.application_url ?? null,
-      deadline: m.deadline ?? null,
-      gaps: m.gaps.map((g: any) => ({
-        ...g,
-        how_to_close: g.how_to_close ?? null,
-      })),
+      opportunity_id: m.opportunity_id ?? undefined,
+      application_url: m.application_url ?? undefined,
+      deadline: m.deadline ?? undefined,
+      gaps: Array.isArray(m.gaps)
+        ? m.gaps.map((g: any) => ({
+            ...g,
+            how_to_close: g.how_to_close ?? undefined,
+          }))
+        : [],
     }))
     .sort((a, b) => b.fit_score - a.fit_score);
 }
 
-// Pulls from YOUR OWN Opportunity collection only — fast, free, no external calls.
-export const getCandidatesFromDB = async (user: any) => {
-  const query: any = {
-    is_active: true,
-    // allow opportunities with no deadline set yet, alongside ones that haven't passed
-    $or: [
-      { deadline: { $exists: false } },
-      { deadline: null },
-      { deadline: { $gte: new Date() } },
-    ],
-    "eligibility.status": user.status,
-    type: { $in: user.goals.map((g: string) => typeMap[g]) },
-  };
-
-  if (user.course_of_study) {
-    query.$and = [
-      {
-        $or: [
-          { "eligibility.course_keywords": { $exists: false } },
-          { "eligibility.course_keywords": { $size: 0 } },
-          {
-            "eligibility.course_keywords": {
-              $elemMatch: { $regex: user.course_of_study, $options: "i" },
-            },
-          },
-        ],
-      },
-    ];
+export const extractTavilyResults = (response: any): any[] => {
+  if (Array.isArray(response)) {
+    return response.flatMap((item) => extractTavilyResults(item));
   }
 
-  return Opportunity.find(query).limit(30);
+  if (Array.isArray(response?.results)) {
+    return response.results;
+  }
+
+  return [];
+};
+
+export const normalizeModelMatches = (
+  matches: any[],
+  validDatabaseIds: Set<string>,
+) => {
+  return normalize(
+    matches.filter((match) => {
+      if (match?.source === "DATABASE") {
+        const candidateId = match.opportunity_id?.toString();
+        return !!candidateId && validDatabaseIds.has(candidateId);
+      }
+      return true;
+    }),
+  );
+};
+
+function escapeRegex(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export const persistNewLiveMatches = async (matches: any[]) => {
+  for (const match of matches) {
+    if (match?.source !== "LIVE_SEARCH") continue;
+    if (!match?.title) continue;
+
+    const existingOpportunity = await Opportunity.findOne({
+      title: { $regex: `^${escapeRegex(match.title)}$`, $options: "i" },
+    });
+
+    if (existingOpportunity) {
+      match.opportunity_id = existingOpportunity._id.toString();
+      match.source = "DATABASE";
+      continue;
+    }
+
+    const created = await Opportunity.create({
+      title: match.title,
+      type: match.type || "SCHOLARSHIP",
+      description: match.program_overview || match.reasoning || "Found via live search",
+      application_url: match.application_url || null,
+      deadline: match.deadline ? new Date(match.deadline) : null,
+      is_active: true,
+    });
+
+    match.opportunity_id = created._id.toString();
+    match.source = "DATABASE";
+  }
+
+  return matches;
+};
+
+// Pulls from YOUR OWN Opportunity collection only — fast, free, no external calls.
+export const getCandidatesFromDB = async (user: any) => {
+  const and: any[] = [
+    {
+      $or: [
+        { deadline: { $exists: false } },
+        { deadline: null },
+        { deadline: { $gte: new Date() } },
+      ],
+    },
+    {
+      $or: [
+        { "eligibility.status": user.status },
+        { "eligibility.status": { $size: 0 } },
+        { "eligibility.status": { $exists: false } },
+      ],
+    },
+  ];
+
+  if (user.course_of_study) {
+    and.push({
+      $or: [
+        { "eligibility.course_keywords": { $exists: false } },
+        { "eligibility.course_keywords": { $size: 0 } },
+        {
+          "eligibility.course_keywords": {
+            $elemMatch: { $regex: user.course_of_study, $options: "i" },
+          },
+        },
+      ],
+    });
+  }
+
+  return Opportunity.find({
+    is_active: true,
+    type: { $in: user.goals.map((g: string) => typeMap[g]) },
+    $and: and,
+  }).limit(30);
 };
 
 // Goes OUT to the web via Tavily — slower, costs money per call.
@@ -148,14 +229,17 @@ async function getLiveCandidates(user: any, existingTitles: Set<string>) {
     : "worldwide";
 
   const searches = user.goals.map((goal: string) => {
+    const currentYear = new Date().getFullYear();
     const query = `${goalTerms[goal]} for ${user.status.toLowerCase()} in ${
       user.course_of_study || "any field"
-    }, CGPA ${user.current_grade ?? "not specified"}, ${countries}, 2026 deadlines`;
+    }, CGPA ${user.current_grade ?? "not specified"}, ${countries}, ${currentYear} deadlines`;
     return searchTool.invoke({ query });
   });
 
   const resultsPerGoal = await Promise.all(searches);
-  const allResults = resultsPerGoal.flat();
+  const allResults = resultsPerGoal.flatMap((result) =>
+    extractTavilyResults(result),
+  );
 
   return allResults.filter((r: any) => {
     const normalizedTitle = r.title?.toLowerCase().trim();
@@ -168,6 +252,9 @@ async function getLiveCandidates(user: any, existingTitles: Set<string>) {
 // Only scores against your OWN database — no Tavily call, no web search.
 export const fetch_opportunities = async (user: any) => {
   const dbCandidates = await getCandidatesFromDB(user);
+  const validDatabaseIds = new Set(
+    dbCandidates.map((candidate: any) => candidate._id.toString()),
+  );
 
   const response = await model.invoke([
     { role: "system", content: MATCHING_SYSTEM_PROMPT },
@@ -201,7 +288,7 @@ export const fetch_opportunities = async (user: any) => {
     },
   ]);
 
-  return normalize(response.matches);
+  return normalizeModelMatches(response?.matches ?? [], validDatabaseIds);
 };
 
 // USED ONLY BY: the daily cron job. Does the full expensive pipeline —
@@ -209,6 +296,9 @@ export const fetch_opportunities = async (user: any) => {
 // can decide which live-search finds are worth permanently saving.
 export const discover_new_opportunities = async (user: any) => {
   const dbCandidates = await getCandidatesFromDB(user);
+  const dbCandidateIds = new Set(
+    dbCandidates.map((candidate: any) => candidate._id.toString()),
+  );
   const existingTitles = new Set(
     dbCandidates.map((o: any) => o.title.toLowerCase().trim()),
   );
@@ -246,5 +336,7 @@ export const discover_new_opportunities = async (user: any) => {
     },
   ]);
 
-  return normalize(response.matches);
+  const discoveredMatches = await persistNewLiveMatches(response?.matches ?? []);
+
+  return normalizeModelMatches(discoveredMatches, dbCandidateIds);
 };

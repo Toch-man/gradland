@@ -54,7 +54,7 @@ async function refreshAllUsers() {
           CACHE_TTL_SECONDS,
         );
         console.log(
-          `[cron] refreshed ${user.email}: no new opportunities, cache updated`,
+          `[cron] refreshed ${user.email}: ${newFinds.length} new opportunities, cache updated`,
         );
       }
 
